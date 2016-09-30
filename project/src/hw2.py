@@ -80,15 +80,5 @@ def exp_svm():
 
 
 
-
-
-
-
-    mlp=MLP()
-    svm=SVM(max_iter=-1)
-    result_mlp=mlp.crossval(data,label)
-    result_svm=svm.crossval(data,label)
-    set_trace()
-
 if __name__ == "__main__":
     eval(cmd())
