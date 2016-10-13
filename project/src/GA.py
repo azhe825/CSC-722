@@ -3,232 +3,19 @@ from __future__ import absolute_import, division
 from random import uniform,randint,random,seed
 from time import time
 import numpy as np
+import matplotlib.pyplot as plt
 from pdb import set_trace
 import pickle
 from sklearn import svm
 from demos import cmd
 
 
-from HVE import Hve
-
-
-class Model(object):
-    def any(self):
-        while True:
-            for i in range(0,self.decnum):
-                self.dec[i]=uniform(self.bottom[i],self.top[i])
-            if self.check(): break
-        return self
-
-    def __init__(self):
-        self.bottom=[0]
-        self.top=[0]
-        self.decnum=0
-        self.objnum=0
-        self.dec=[]
-        self.lastdec=[]
-        self.obj=[]
-        self.any()
-
-    def eval(self):
-        return sum(self.getobj())
-
-    def copy(self,other):
-        self.dec=other.dec[:]
-        self.lastdec=other.lastdec[:]
-        self.obj=other.obj[:]
-        self.bottom=other.bottom[:]
-        self.top=other.top[:]
-        self.decnum=other.decnum
-        self.objnum=other.objnum
-
-    def getobj(self):
-        return []
-
-    def getdec(self):
-        return self.dec
-
-    def check(self):
-        for i in range(0,self.decnum):
-            if self.dec[i]<self.bottom[i] or self.dec[i]>self.top[i]:
-                return False
-        return True
+# from HVE import Hve
+from model import *
 
 
 
 
-"Models:"
-class DTLZ1(Model):
-    def __init__(self,n=10,m=2):
-        self.bottom=[0]*n
-        self.top=[1]*n
-        self.decnum=n
-        self.objnum=m
-        self.dec=[0]*n
-        self.lastdec=[]
-        self.obj=[]
-        self.any()
-
-    def getobj(self):
-        if self.dec==self.lastdec:
-            return self.obj
-        f=[]
-        g=self.decnum-self.objnum+1
-        for x in self.dec[self.objnum-1:]:
-            g=g+np.square(x-0.5)-np.cos((x-0.5)*20*np.pi)
-        g=g*100
-        for i in xrange(self.objnum):
-            tmp=0.5*(1+g)
-            for x in self.dec[:self.objnum-1-i]:
-                tmp=tmp*x
-            if not i==0:
-                tmp=tmp*(1-self.dec[self.objnum-i])
-            f.append(tmp)
-        self.lastdec=self.dec
-        self.obj=f
-        return f
-
-class DTLZ3(Model):
-    def __init__(self,n=10,m=2):
-        self.bottom=[0]*n
-        self.top=[1]*n
-        self.decnum=n
-        self.objnum=m
-        self.dec=[0]*n
-        self.lastdec=[]
-        self.obj=[]
-        self.any()
-
-    def getobj(self):
-
-        if self.dec==self.lastdec:
-            return self.obj
-
-        f=[]
-        g=self.decnum-self.objnum+1
-        for x in self.dec[self.objnum-1:]:
-            g=g+np.square(x-0.5)-np.cos((x-0.5)*20*np.pi)
-        g=g*100
-        for i in xrange(self.objnum):
-            tmp=1+g
-            for x in self.dec[:self.objnum-1-i]:
-                tmp=tmp*np.cos(x*np.pi/2)
-            if not i==0:
-                tmp=tmp*np.sin(self.dec[self.objnum-i]*np.pi/2)
-            f.append(tmp)
-        self.lastdec=self.dec
-        self.obj=f
-        return f
-
-class DTLZ5(Model):
-    def __init__(self,n=10,m=2):
-        self.bottom=[0]*n
-        self.top=[1]*n
-        self.decnum=n
-        self.objnum=m
-        self.dec=[0]*n
-        self.lastdec=[]
-        self.obj=[]
-        self.any()
-
-    def getobj(self):
-
-        if self.dec==self.lastdec:
-            return self.obj
-
-        f=[]
-        g=0
-        for x in self.dec[self.objnum-1:]:
-            g=g+np.square(x-0.5)
-        theta=[np.pi*self.dec[0]/2]
-        for x in self.dec[1:self.objnum-1]:
-            theta.append((1+2*g*x)*np.pi/(4*(1+g)))
-        for i in xrange(self.objnum):
-            tmp=1+g
-            for x in theta[:self.objnum-1-i]:
-                tmp=tmp*np.cos(x*np.pi/2)
-            if not i==0:
-                tmp=tmp*np.sin(theta[self.objnum-i-1]*np.pi/2)
-            f.append(tmp)
-        self.lastdec=self.dec
-        self.obj=f
-        return f
-
-class DTLZ7(Model):
-    def __init__(self,n=10,m=2):
-        self.bottom=[0]*n
-        self.top=[1]*n
-        self.decnum=n
-        self.objnum=m
-        self.dec=[0]*n
-        self.lastdec=[]
-        self.obj=[]
-        self.any()
-
-    def getobj(self):
-        if self.dec==self.lastdec:
-            return self.obj
-        f=[]
-        g=1+9/(self.decnum-self.objnum+1)*np.sum(self.dec[self.objnum-1:])
-        h=self.objnum
-        for i in xrange(self.objnum-1):
-            f.append(self.dec[i])
-            h=h-f[i]/(1+g)*(1+np.sin(3*np.pi*f[i]))
-        f.append((1+g)*h)
-        self.lastdec=self.dec
-        self.obj=f
-        return f
-
-class Tunee(Model):
-    def __init__(self,**kwargs):
-        self.decname=[]
-        self.decnum=0
-        self.objnum=1
-        self.bottom=[]
-        self.top=[]
-        self.kw=kwargs
-        self.dec=[]
-        for key in kwargs:
-            if type(kwargs[key])==type([]):
-                if len(kwargs[key])==3:
-                    self.decname.append(key)
-                    self.decnum=self.decnum+1
-                    self.bottom.append(kwargs[key][1])
-                    self.top.append(kwargs[key][2])
-                    self.dec.append(kwargs[key][0])
-
-        self.lastdec=[]
-        self.obj=[]
-
-    def getobj(self):
-        if self.dec==self.lastdec:
-            return self.obj
-        for i,key in enumerate(self.decname):
-            self.kw[key]=self.dec[i]
-        f=optimize(**self.kw)
-        self.lastdec=self.dec
-        self.obj=[f]
-        return [f]
-
-    def copy(self,other):
-        self.decname=other.decname[:]
-        self.kw.update(other.kw)
-        self.dec=other.dec[:]
-        self.lastdec=other.lastdec[:]
-        self.obj=other.obj[:]
-        self.bottom=other.bottom[:]
-        self.top=other.top[:]
-        self.decnum=other.decnum
-        self.objnum=other.objnum
-
-def optimize(**kwargs):
-    min=kwargs['min']
-    max=kwargs['max']
-    optimizer=kwargs['optimizer']
-    del kwargs['min']
-    del kwargs['max']
-    del kwargs['optimizer']
-    return hve(optimizer(**kwargs),min,max,100000)
 
 "DE, maximization"
 def differential_evolution(model,**kwargs):
@@ -242,7 +29,7 @@ def differential_evolution(model,**kwargs):
                 a3=[candidates[tt] for tt in abc]
                 xold=candidates[i]
                 r=randint(0,xold.decnum-1)
-                xnew=model(**kwargs)
+                xnew=model.new()
                 xnew.any()
                 for j in xrange(xold.decnum):
                     if random()<cr or j==r:
@@ -265,10 +52,10 @@ def differential_evolution(model,**kwargs):
     maxtries=10
     f=0.75
     cr=0.3
-    xbest=model(**kwargs)
+    xbest=model.new()
     candidates=[xbest]
     for i in range(1,nb):
-        x=model(**kwargs)
+        x=model.new()
         x.any()
         candidates.append(x)
         if x.eval()>xbest.eval():
@@ -315,7 +102,8 @@ def is_bd(a,b):
             return False
     return True
 
-def crossover(a,b,baby):
+def crossover(a,b):
+    baby=a.new()
     life=len(a.dec)
     while True:
         x=randint(1,len(a.dec)-1)
@@ -367,7 +155,7 @@ def update_pf(pf,can):
             pf.append(can)
         return True
 
-def train_learner(can,pf,kernel='rbf'):
+def train_learner(can,pf,kernel='rbf',aggressive=False):
     x=[]
     y=[]
     for data in can:
@@ -378,15 +166,23 @@ def train_learner(can,pf,kernel='rbf'):
             y.append("neg")
     learner=svm.SVC(kernel=kernel,probability=True)
     learner.fit(x,y)
+    if aggressive:
+        poses = np.where(np.array(y) == "pos")[0]
+        negs = np.where(np.array(y) == "neg")[0]
+        train_dist = learner.decision_function(np.array(x)[negs])
+        negs_sel = np.argsort(np.abs(train_dist))[::-1][:len(poses)]
+        sample = poses.tolist() + negs[negs_sel].tolist()
+
+        learner.fit(np.array(x)[sample], np.array(y)[sample])
     return learner
 
 
-def GeneticAlgorithm_active(hve,Model=DTLZ1,decnum=10,objnum=2,the_seed=-1,candidates=100,generations=1000,mutation_rate=0.05,lifes=5,kernal="linear"):
+def GeneticAlgorithm_active(hve,Model,the_seed=-1,candidates=100,init=10,generations=1000,mutation_rate=0.05,lifes=5,kernal="linear",aggressive=False):
     if the_seed>=0:
         seed(the_seed)
     candidates=int(candidates)
     lifes=int(lifes)
-    can=[Model(decnum,objnum) for _ in xrange(candidates*10)]
+    can=[Model.new().any() for _ in xrange(candidates*init)]
 
     pf=[]
     update_pf(pf,can)
@@ -405,12 +201,11 @@ def GeneticAlgorithm_active(hve,Model=DTLZ1,decnum=10,objnum=2,the_seed=-1,candi
             for bb in pf:
                 if bb==aa:
                     continue
-                baby=Model(decnum,objnum)
-                crossover(aa,bb,baby)
+                baby=crossover(aa,bb)
                 can_new.append(baby)
-        for j in xrange(len(can_new)):
-            baby=Model(decnum,objnum)
-            can_new.append(baby.any())
+        # for j in xrange(int(mutation_rate*(2**life)*len(can_new))):
+        #     baby=Model.new().any()
+        #     can_new.append(baby)
 
         data=[x.getdec() for x in can_new]
 
@@ -419,10 +214,12 @@ def GeneticAlgorithm_active(hve,Model=DTLZ1,decnum=10,objnum=2,the_seed=-1,candi
         proba = proba[:, pos_at]
         order = np.argsort(proba)[::-1][:candidates]
         can_kept = [can_new[x] for x in order]
+        for x in can_kept:
+            if random() < mutation_rate * (2 ** life):
+                x.any()
         can.extend(can_kept)
-        learner=train_learner(can,pf,kernel=kernal)
-
-        change=update_pf(pf,can_kept)
+        change = update_pf(pf, can_kept)
+        learner=train_learner(can,pf,kernel=kernal,aggressive=aggressive)
         if change:
             life=0
         else:
@@ -434,12 +231,13 @@ def GeneticAlgorithm_active(hve,Model=DTLZ1,decnum=10,objnum=2,the_seed=-1,candi
         print("Generation: %d. Hypervolume: %f" %(i+1,hv[i+1]))
     return hv
 
-def GeneticAlgorithm(hve,Model=DTLZ1,decnum=10,objnum=2,the_seed=-1,candidates=100,generations=1000,mutation_rate=0.05,lifes=5):
+
+def GeneticAlgorithm(hve,Model,the_seed=-1,candidates=100,init=10,generations=1000,mutation_rate=0.05,lifes=5):
     if the_seed>=0:
         seed(the_seed)
     candidates=int(candidates)
     lifes=int(lifes)
-    can=[Model(decnum,objnum) for _ in xrange(candidates*10)]
+    can=[Model.new().any() for _ in xrange(candidates*init)]
 
     pf=[]
     update_pf(pf,can)
@@ -453,11 +251,10 @@ def GeneticAlgorithm(hve,Model=DTLZ1,decnum=10,objnum=2,the_seed=-1,candidates=1
     for i in xrange(generations):
         can_new=[]
         for j in xrange(candidates):
-            baby=Model(decnum,objnum)
             pick=np.random.choice(len(pf),2,replace=False)
-            crossover(pf[pick[0]],pf[pick[1]],baby)
+            baby=crossover(pf[pick[0]],pf[pick[1]])
             if random()<mutation_rate*(2**life):
-                mutate(baby)
+                baby.any()
             can_new.append(baby)
 
         change=update_pf(pf,can_new)
@@ -473,27 +270,126 @@ def GeneticAlgorithm(hve,Model=DTLZ1,decnum=10,objnum=2,the_seed=-1,candidates=1
 
     return hv
 
+def run_exp(setting):
 
+    hve_cal = Hve(setting['model'], setting['hv_num'])
 
+    hv_1 = GeneticAlgorithm(hve_cal, the_seed=setting['seed'], Model=setting['model'], candidates=setting['candidates'], init=setting['init'],
+                            generations=setting['generations'], mutation_rate=setting['mutation_rate'], lifes=setting['lifes'])
+    hv_2 = GeneticAlgorithm_active(hve_cal, the_seed=setting['seed'], Model=setting['model'], candidates=setting['candidates'], init=setting['init'],
+                            generations=setting['generations'], mutation_rate=setting['mutation_rate'], lifes=setting['lifes'], kernal="linear",
+                                   aggressive=False)
+    hv_3 = GeneticAlgorithm_active(hve_cal, the_seed=setting['seed'], Model=setting['model'], candidates=setting['candidates'], init=setting['init'],
+                            generations=setting['generations'], mutation_rate=setting['mutation_rate'], lifes=setting['lifes'], kernal="linear",
+                                   aggressive=True)
+    hv_4 = GeneticAlgorithm_active(hve_cal, the_seed=setting['seed'], Model=setting['model'], candidates=setting['candidates'], init=setting['init'],
+                            generations=setting['generations'], mutation_rate=setting['mutation_rate'], lifes=setting['lifes'], kernal="rbf",
+                                   aggressive=False)
+    hv_5 = GeneticAlgorithm_active(hve_cal, the_seed=setting['seed'], Model=setting['model'], candidates=setting['candidates'], init=setting['init'],
+                            generations=setting['generations'], mutation_rate=setting['mutation_rate'], lifes=setting['lifes'], kernal="rbf",
+                                   aggressive=True)
+    hvs = {"GA": hv_1, "linearN": hv_2, "linearA": hv_3, "rbfN": hv_4, "rbfA": hv_5}
+    return hvs
 
-
-
-def simple():
+def simple(id):
     candidates=100
-    generations=1000
-    mutation_rate=0.05
+    generations=20
+    mutation_rate=0.1
+    init=10
     lifes=5
-    model=DTLZ7
     objs=3
-    decs=30
-    hv_num=300000
+    decs=10
+    model=DTLZ7(n=decs,m=objs)
+    hv_num=100000
+    seed=int(id)
+    setting = {"candidates": candidates, "generations": generations, "mutation_rate": mutation_rate, "init": init,
+               "hv_num": hv_num,'seed': seed, "lifes": lifes, "model": model}
 
-    hve_cal = Hve(model,decs,objs,hv_num)
-    hv_1=GeneticAlgorithm_active(hve_cal,Model=model,decnum=decs,objnum=objs,candidates=candidates,generations=generations,mutation_rate=mutation_rate,lifes=lifes,kernal="linear")
-    hv_2=GeneticAlgorithm(hve_cal,Model=model,decnum=decs,objnum=objs,candidates=candidates,generations=generations,mutation_rate=mutation_rate,lifes=lifes)
-    with open("../dump/simple.pickle","w") as handle:
+    hvs=run_exp(setting)
+    with open("../dump/simple"+str(id)+".pickle","w") as handle:
+        pickle.dump(hvs, handle)
+
+
+def loadData(file="../../data/biodeg.csv"):
+    with open(file, 'r') as f:
+        data = []
+        label = []
+        for line in f.readlines():
+            data.append(map(float, line.strip().split(";")[:-1]))
+            label.append(line.strip().split(";")[-1])
+    data = np.array(data)
+    label = np.array(label)
+    return data, label
+
+def tune_mlp(file="../../data/biodeg.csv"):
+    data,label=loadData(file)
+    candidates = 10
+    generations = 20
+    mutation_rate = 0.05
+    init=5
+    lifes = 5
+    model = Mlp_exp(data=data,label=label)
+    hv_num = 100000
+    seed = 10
+
+    setting = {"candidates": candidates, "generations": generations, "mutation_rate": mutation_rate, "init": init,
+               "hv_num": hv_num, 'seed': seed, "lifes": lifes, "model": model}
+
+
+    hvs = run_exp(setting)
+    with open("../dump/tune_mlp.pickle", "w") as handle:
+        pickle.dump(hvs, handle)
+
+def tune_svm(file="../../data/biodeg.csv"):
+    data, label = loadData(file)
+    candidates = 10
+    generations = 20
+    init=5
+    mutation_rate = 0.05
+    lifes = 5
+    model = Svm_exp(data=data, label=label)
+    hv_num = 100000
+    seed = 10
+
+    setting = {"candidates": candidates, "generations": generations, "mutation_rate": mutation_rate, "init": init,
+               "hv_num": hv_num, 'seed': seed, "lifes": lifes, "model": model}
+
+
+    hvs = run_exp(setting)
+    with open("../dump/tune_svm.pickle", "w") as handle:
         pickle.dump(hv_1, handle)
         pickle.dump(hv_2, handle)
+
+
+## Drawings ##
+
+def draw_simple(id):
+    font = {'family': 'cursive',
+            'weight': 'bold',
+            'size': 20}
+
+
+    plt.rc('font', **font)
+    paras = {'lines.linewidth': 4, 'legend.fontsize': 20, 'axes.labelsize': 30, 'legend.frameon': False,
+             'figure.autolayout': True, 'figure.figsize': (16, 6)}
+    plt.rcParams.update(paras)
+
+    with open("../dump/simple"+str(id)+".pickle", "r") as handle:
+        hvs = pickle.load(handle)
+
+    x=np.min([len(hvs[k]) for k in hvs])
+    xa=[1000+s*100 for s in xrange(x)]
+
+    plt.figure(1)
+    for key in hvs:
+        plt.plot(xa, hvs[key][:x], label=key)
+
+    plt.ylabel("Hyper Volume")
+    plt.xlabel("Number of Evaluations")
+    plt.legend(bbox_to_anchor=(0.9, 0.60), loc=1, ncol=1, borderaxespad=0.)
+    plt.savefig("../figure/simple"+str(id)+".eps")
+    plt.savefig("../figure/simple"+str(id)+".png")
+
 
 if __name__ == "__main__":
     eval(cmd())

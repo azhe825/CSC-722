@@ -1,9 +1,7 @@
 
-a=[1,2,3,4]
+a=[[1,2,3,4],[2,3]]
 for x in a:
-    print x
-    for y in a:
-        if y==3:
-            a.remove(y)
+    if len(x)<3:
+        x.append(10)
 
 print a

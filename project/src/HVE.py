@@ -10,21 +10,25 @@ from pdb import set_trace
 
 class Hve(object):
 
-    def __init__(self,model,decnum,objnum,num=100000):
+    def __init__(self,model,num=100000,min_max=[]):
         self.model=model
-        self.decnum=decnum
-        self.objnum=objnum
+        self.decnum=model.decnum
+        self.objnum=model.objnum
         self.num=num
-        self.init_min_max()
-        self.init_pebble()
+        if len(min_max)==2:
+            self.min=min_max[0]
+            self.max=min_max[1]
+        else:
+            self.init_min_max()
+        # self.init_pebble()
 
     def init_min_max(self):
-        can=[self.model(self.decnum,self.objnum) for _ in xrange(self.num)]
+        can=[self.model.new().any() for _ in xrange(self.num)]
         self.max=[np.max([c.getobj()[i] for c in can]) for i in range(self.objnum)]
         self.min=[np.min([c.getobj()[i] for c in can]) for i in range(self.objnum)]
 
-    def init_pebble(self):
-        self.pebbles=[[uniform(self.min[k],self.max[k]) for k in xrange(self.objnum)] for i in xrange(self.num)]
+    # def init_pebble(self):
+    #     self.pebbles=[[uniform(self.min[k],self.max[k]) for k in xrange(self.objnum)] for i in xrange(self.num)]
 
 
     "is a binary dominate b? smaller is better"
@@ -55,7 +59,8 @@ class Hve(object):
     "estimate hyper volumn of frontier"
     def hve(self,frontier):
         count=0
-        for pebble in self.pebbles:
+        for x in xrange(self.num):
+            pebble = [uniform(self.min[k], self.max[k]) for k in xrange(self.objnum)]
             if self.inbox(pebble,frontier):
                 count=count+1
         return count/(self.num)
