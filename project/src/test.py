@@ -179,5 +179,104 @@ def scatter_points3(s):
 
     plt.savefig("../figure/test_a.png")
 
+def scatter_pointsR(s):
+    min=0
+    max=6
+    seed(s)
+    num=100
+
+    can=[]
+    y=[]
+
+    x_p = []
+    x_n = []
+    y_p = []
+    y_n = []
+
+    for i in xrange(num):
+        tmp=[random()*max,random()*max]
+        can.append(tmp)
+        if random()<np.exp(-0.8*sum(tmp)+1):
+            y.append(1)
+            x_p.append(tmp[0])
+            y_p.append(tmp[1])
+        else:
+            y.append(0)
+            x_n.append(tmp[0])
+            y_n.append(tmp[1])
+
+
+
+    clf=svm.SVC(kernel='linear', probability=True)
+
+    clf.fit(can, y)
+    w=clf.coef_[0]
+    b=clf.intercept_[0]
+    p1=-b/w[0]
+    p2=-b/w[1]
+
+    poses = np.where(np.array(y) == 1)[0]
+    negs = np.where(np.array(y) == 0)[0]
+    train_dist = clf.decision_function(np.array(can)[negs])
+    negs_sel = np.argsort(np.abs(train_dist))[::-1][:len(poses)]
+    sample = poses.tolist() + negs[negs_sel].tolist()
+    clf.fit(np.array(can)[sample],np.array(y)[sample])
+
+    ww=clf.coef_[0]
+    bb=clf.intercept_
+    pp1=-bb/ww[0]
+    pp2=-bb/ww[1]
+
+    x_nn=[x_n[i] for i in negs_sel]
+    y_nn=[y_n[i] for i in negs_sel]
+
+    plt.figure(1)
+    plt.scatter(x_p,y_p,marker='+', s=250, edgecolors='blue', linewidths=3)
+    plt.scatter(x_n,y_n,marker='x', s=250, edgecolors='red', linewidths=3)
+    plt.plot([0,p1],[p2,0],color='black', linewidth=3)
+    plt.xlim([min,max])
+    plt.ylim([min,max])
+
+    plt.savefig("../figure/train.png")
+
+    plt.figure(2)
+    plt.scatter(x_p,y_p,marker='+', s=250, edgecolors='blue', linewidths=3)
+    plt.scatter(x_nn,y_nn,marker='x', s=250, edgecolors='red', linewidths=3)
+    plt.plot([0,pp1],[pp2,0],color='black', linewidth=3)
+
+    plt.xlim([min,max])
+    plt.ylim([min,max])
+
+    plt.savefig("../figure/train_a.png")
+
+
+    x_nt=[]
+    y_nt=[]
+    for i in xrange(num):
+        tmp=[random()*max,random()*max]
+        x_nt.append(tmp[0])
+        y_nt.append(tmp[1])
+
+
+    plt.figure(3)
+    plt.scatter(x_nt,y_nt,marker='.', s=250, color='green', linewidths=3)
+    plt.plot([0,p1],[p2,0],color='black', linewidth=3)
+
+    plt.xlim([min,max])
+    plt.ylim([min,max])
+
+    plt.savefig("../figure/test.png")
+
+    plt.figure(4)
+    plt.scatter(x_nt,y_nt,marker='.', s=250, color='green', linewidths=3)
+    plt.plot([0,pp1],[pp2,0],color='black', linewidth=3)
+
+    plt.xlim([min,max])
+    plt.ylim([min,max])
+
+    plt.savefig("../figure/test_a.png")
+
+
+
 if __name__ == "__main__":
     eval(cmd())
