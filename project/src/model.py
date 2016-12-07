@@ -325,7 +325,7 @@ class Svm_exp(Model):
             iter=-1
         else:
             iter=2**self.dec[2]
-        svm = SVM(activation=kernels[self.dec[1]], max_iter=iter, C=2**self.dec[3])
+        svm = SVM(kernel=kernels[self.dec[1]], max_iter=iter, C=2**self.dec[3])
         self.lastdec = self.dec
         self.obj = svm.crossval_pr(self.data, self.label, self.dec[0])
         return self.obj
